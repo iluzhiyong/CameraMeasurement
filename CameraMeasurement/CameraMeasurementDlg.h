@@ -4,12 +4,17 @@
 #include "HalconHeader.h"
 #pragma once
 
+class CCamCalibDlg;
+class CImageWCSDlg;
+class CImageProcessDlg;
+
 // CCameraMeasurementDlg dialog
 class CCameraMeasurementDlg : public CDialogEx
 {
 // Construction
 public:
 	CCameraMeasurementDlg(CWnd* pParent = NULL);	// standard constructor
+	~CCameraMeasurementDlg();
 
 // Dialog Data
 	enum { IDD = IDD_CAMERAMEASUREMENT_DIALOG };
@@ -38,7 +43,13 @@ public:
 	HObject hv_image;
 	HTuple  hv_WindowID, hv_OpSystem;
 
+	CCamCalibDlg* m_CamCalibDlg;
+	CImageWCSDlg* m_ImageWCSDlg;
+	CImageProcessDlg* m_ImageProcessDlg;
+
 public:
 	void OpenHalconWind();
 	void DisplayImage(HObject image, bool resize);
+	afx_msg void OnBnClickedProcessImgBtn();
+	afx_msg void OnStnClickedShowImage();
 };

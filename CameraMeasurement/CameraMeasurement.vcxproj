@@ -73,6 +73,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)bin</OutDir>
+    <EmbedManifest>true</EmbedManifest>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -206,6 +207,7 @@
     <ClInclude Include="CameraMeasurement.h" />
     <ClInclude Include="CameraMeasurementDlg.h" />
     <ClInclude Include="HalconHeader.h" />
+    <ClInclude Include="ImageProcessDlg.h" />
     <ClInclude Include="ImageWCSDlg.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="stdafx.h" />
@@ -215,6 +217,7 @@
     <ClCompile Include="CamCalibDlg.cpp" />
     <ClCompile Include="CameraMeasurement.cpp" />
     <ClCompile Include="CameraMeasurementDlg.cpp" />
+    <ClCompile Include="ImageProcessDlg.cpp" />
     <ClCompile Include="ImageWCSDlg.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>

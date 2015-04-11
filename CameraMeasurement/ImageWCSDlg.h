@@ -22,8 +22,8 @@ public:
 	afx_msg void OnBnClickedOk();
 	CString m_CamParamFile;
 	CString m_CamPoseFile;
-	int m_ImgRow;
-	int m_ImgColumn;
+	float m_ImgRow;
+	float m_ImgColumn;
 	float m_WCSX;
 	float m_WCSY;
 	afx_msg void OnBnClickedCalBtn();

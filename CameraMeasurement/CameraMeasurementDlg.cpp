@@ -9,6 +9,7 @@
 #include "CamCalibDlg.h"
 #include "ImageWCSDlg.h"
 #include "HalconHeader.h"
+#include "ImageProcessDlg.h"
 
 using namespace HalconCpp;
 
@@ -57,6 +58,30 @@ CCameraMeasurementDlg::CCameraMeasurementDlg(CWnd* pParent /*=NULL*/)
 	: CDialogEx(CCameraMeasurementDlg::IDD, pParent)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
+
+	m_CamCalibDlg = NULL;
+	m_ImageWCSDlg = NULL;
+	m_ImageProcessDlg = NULL; 
+
+}
+
+CCameraMeasurementDlg::~CCameraMeasurementDlg()
+{
+	if(m_CamCalibDlg != NULL)
+	{
+		delete m_CamCalibDlg;
+		m_CamCalibDlg = NULL;
+	}
+	if(m_ImageWCSDlg != NULL)
+	{
+		delete m_ImageWCSDlg;
+		m_ImageWCSDlg = NULL;
+	}
+	if(m_ImageProcessDlg != NULL)
+	{
+		delete m_ImageProcessDlg;
+		m_ImageProcessDlg = NULL;
+	}
 }
 
 void CCameraMeasurementDlg::DoDataExchange(CDataExchange* pDX)
@@ -73,6 +98,8 @@ BEGIN_MESSAGE_MAP(CCameraMeasurementDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_CAM_CALIB_BTN, &CCameraMeasurementDlg::OnBnClickedCamCalibBtn)
 	ON_BN_CLICKED(IDC_IMAGE_WCS_BTN, &CCameraMeasurementDlg::OnBnClickedImageWcsBtn)
 	ON_BN_CLICKED(IDC_OPEN_IMG_BTN, &CCameraMeasurementDlg::OnBnClickedOpenImgBtn)
+	ON_BN_CLICKED(IDC_PROCESS_IMG_BTN, &CCameraMeasurementDlg::OnBnClickedProcessImgBtn)
+	ON_STN_CLICKED(IDC_SHOW_IMAGE, &CCameraMeasurementDlg::OnStnClickedShowImage)
 END_MESSAGE_MAP()
 
 
@@ -170,42 +197,33 @@ void CCameraMeasurementDlg::OnBnClickedOk()
 	//CDialogEx::OnOK();
 }
 
-void CCameraMeasurementDlg::OnBnClickedCamCalibBtn()
-{
-	CCamCalibDlg dlg;
-	dlg.DoModal();
-}
 
-
-void CCameraMeasurementDlg::OnBnClickedImageWcsBtn()
-{
-	CImageWCSDlg dlg;
-	dlg.DoModal();
-}
 
 
 void CCameraMeasurementDlg::OnBnClickedOpenImgBtn()
 {
-	HalconCpp::ReadImage(&hv_image, "C:\\CalibImages\\calib_02.png");
+	CFileDialog dlg(TRUE);
+
+	INT_PTR retval = dlg.DoModal();
+	if(retval==IDCANCEL)
+	{
+		return;
+	}
+
+	HTuple hv_Exception;
+	try
+	{
+		HalconCpp::ReadImage(&hv_image, (char*)LPCTSTR(dlg.GetPathName()));
+	}
+	// catch (Exception) 
+	catch (HalconCpp::HException &HDevExpDefaultException)
+	{
+		HDevExpDefaultException.ToHTuple(&hv_Exception);
+	}
+
 
 	DisplayImage(hv_image, true);
 }
-
-void CCameraMeasurementDlg::DisplayImage(HObject image, bool resize)
-{
-	if(resize && HDevWindowStack::IsOpen())
-	{
-		HTuple hv_width,hv_height;
-		HalconCpp::GetImageSize(hv_image, &hv_width, &hv_height);
-		HalconCpp::SetPart(hv_WindowID, 0, 0, hv_width - 1, hv_height -1);
-	}
-
-	if (HDevWindowStack::IsOpen())
-	{
-		HalconCpp::DispObj(hv_image, HDevWindowStack::GetActive());
-	}
-}
-
 
 void CCameraMeasurementDlg::OpenHalconWind()
 {
@@ -217,11 +235,62 @@ void CCameraMeasurementDlg::OpenHalconWind()
 
 	HalconCpp::SetWindowAttr("background_color","black");
 
-	HalconCpp::OpenWindow(rtWindow.left,rtWindow.top,rtWindow.Width(),rtWindow.Height(),(Hlong)hImgWnd,"","",&hv_WindowID);
+	HalconCpp::OpenWindow(rtWindow.left,rtWindow.top, rtWindow.Width(),rtWindow.Height(),(Hlong)hImgWnd,"","",&hv_WindowID);
 
-	HalconCpp::SetPart(hv_WindowID, 0, 0, rtWindow.Width() - 1, rtWindow.Height() -1);
+	HalconCpp::SetPart(hv_WindowID, 0, 0, rtWindow.Height() -1, rtWindow.Width() - 1);
 
 	HDevWindowStack::Push(hv_WindowID);
 }
 
 
+void CCameraMeasurementDlg::DisplayImage(HObject image, bool resize)
+{
+	if(resize && HDevWindowStack::IsOpen())
+	{
+		HTuple hv_width,hv_height;
+		HalconCpp::GetImageSize(hv_image, &hv_width, &hv_height);
+		HalconCpp::SetPart(HDevWindowStack::GetActive(), 0, 0, hv_height -1, hv_width - 1);
+	}
+
+	if (HDevWindowStack::IsOpen())
+	{
+		HalconCpp::DispObj(hv_image, HDevWindowStack::GetActive());
+	}
+}
+
+void CCameraMeasurementDlg::OnBnClickedProcessImgBtn()
+{
+	if(m_ImageProcessDlg == NULL)
+	{
+		m_ImageProcessDlg = new CImageProcessDlg();
+		m_ImageProcessDlg->m_CamMeasureDlg = this;
+		m_ImageProcessDlg->Create(CImageProcessDlg::IDD, this);
+	}
+	m_ImageProcessDlg->ShowWindow(SW_SHOW);
+}
+
+void CCameraMeasurementDlg::OnBnClickedCamCalibBtn()
+{
+	if(m_CamCalibDlg == NULL)
+	{
+		m_CamCalibDlg = new CCamCalibDlg();
+		m_CamCalibDlg->Create(CCamCalibDlg::IDD, this);
+	}
+	m_CamCalibDlg->ShowWindow(SW_SHOW);
+}
+
+
+void CCameraMeasurementDlg::OnBnClickedImageWcsBtn()
+{
+	if(m_ImageWCSDlg == NULL)
+	{
+		m_ImageWCSDlg = new CImageWCSDlg();
+		m_ImageWCSDlg->Create(CImageWCSDlg::IDD, this);
+	}
+	m_ImageWCSDlg->ShowWindow(SW_SHOW);
+}
+
+void CCameraMeasurementDlg::OnStnClickedShowImage()
+{
+	// TODO: Add your control notification handler code here
+}

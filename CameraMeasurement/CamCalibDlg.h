@@ -40,4 +40,8 @@ public:
 
 	CString m_Msg;
 	BOOL m_CalcParam;
+	CString m_AccuracyImage;
+	afx_msg void OnBnClickedCalAccuracyBtn();
+	int m_ModelRow;
+	int m_ModelColumn;
 };

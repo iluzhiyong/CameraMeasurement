@@ -23,6 +23,9 @@ IMPLEMENT_DYNAMIC(CCamCalibDlg, CDialog)
 	, m_CamPoseFile(_T(""))
 	, m_CamPoseImage(_T(""))
 	, m_Msg(_T(""))
+	, m_AccuracyImage(_T(""))
+	, m_ModelRow(7)
+	, m_ModelColumn(7)
 {
 	m_CalcParam = false;
 	InitSet();
@@ -39,6 +42,7 @@ void CCamCalibDlg::InitSet()
 	m_CamParamFile = exePath + _T("Files\\camera_parameters.dat");
 	m_CamPoseFile = exePath + _T("Files\\camera_pose.dat");
 	m_CamPoseImage = exePath + _T("Images\\CamPoseImges\\calib_11");
+	m_AccuracyImage = exePath + _T("Images\\AccuracyImges\\calib_12");
 
 }
 
@@ -68,6 +72,9 @@ void CCamCalibDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Text(pDX, IDC_CAM_POSE_FILE_EDIT, m_CamPoseFile);
 	DDX_Text(pDX, IDC_CAM_POSE_IMAG_EDIT, m_CamPoseImage);
 	DDX_Text(pDX, IDC_SHOWN_MSG, m_Msg);
+	DDX_Text(pDX, IDC_CAM_ACCURACY_IMAG_EDIT, m_AccuracyImage);
+	DDX_Text(pDX, IDC_CALIB_MODEL_ROW_EDIT, m_ModelRow);
+	DDX_Text(pDX, IDC_CALIB_MODEL_COLUMN_EDIT, m_ModelColumn);
 }
 
 
@@ -75,6 +82,7 @@ BEGIN_MESSAGE_MAP(CCamCalibDlg, CDialog)
 	ON_BN_CLICKED(IDOK, &CCamCalibDlg::OnBnClickedOk)
 	ON_BN_CLICKED(IDC_CALC_CAM_PARAM_BTN, &CCamCalibDlg::OnBnClickedCalcCamParamBtn)
 	ON_BN_CLICKED(IDC_CAL_CAM_POSE_BTN, &CCamCalibDlg::OnBnClickedCalCamPoseBtn)
+	ON_BN_CLICKED(IDC_CAL_ACCURACY_BTN, &CCamCalibDlg::OnBnClickedCalAccuracyBtn)
 END_MESSAGE_MAP()
 
 
@@ -133,7 +141,7 @@ void CCamCalibDlg::CalcCamParam()
 		ReadImage(&ho_Image, (hv_ImgPath + hv_ImageName)+("01"));
 		HTuple hv_width, hv_height;
 		HalconCpp::GetImageSize(ho_Image, &hv_width, &hv_height);
-		HalconCpp::SetPart(HDevWindowStack::GetActive(), 0, 0, hv_width - 1, hv_height -1);
+		HalconCpp::SetPart(HDevWindowStack::GetActive(), 0, 0, hv_height -1,  hv_width - 1);
 	}
 	
 
@@ -205,12 +213,17 @@ void CCamCalibDlg::CalCamPose()
 	// Local iconic variables
 	HObject  ho_Image, ho_Caltab;
 
+	HObject ho_Cross;
+
 	// Local control variables
 	HTuple  hv_ImgPath, hv_WindowHandle, hv_CamParam;
 	HTuple  hv_Exception, hv_CaltabName, hv_CalibDataID, hv_RCoord;
 	HTuple  hv_CCoord, hv_Index, hv_PoseForCalibrationPlate;
-	HTuple  hv_finalPose, hv_Row, hv_Column, hv_Button, hv_X1;
-	HTuple  hv_Y1;
+	HTuple  hv_finalPose,  hv_Button;
+
+	HTuple  hv_X1, hv_Y1, hv_Distance;
+    HTuple  hv_MeanDistance, hv_DeviationDistance;
+
 
 	HTuple ho_PoseFilePath;
 
@@ -250,14 +263,156 @@ void CCamCalibDlg::CalCamPose()
 
 	GetCalibDataObservPoints(hv_CalibDataID, 0, 0, 1, &hv_RCoord, &hv_CCoord, &hv_Index, &hv_PoseForCalibrationPlate);
 
+	GenCrossContourXld(&ho_Cross, hv_RCoord, hv_CCoord, 6, 0.785398);
+
 	if (HDevWindowStack::IsOpen())
 	{
-		HalconCpp::DispObj(ho_Caltab, HDevWindowStack::GetActive());
+		SetColor(HDevWindowStack::GetActive(),"green");
+	}
+	if (HDevWindowStack::IsOpen())
+	{
+		DispObj(ho_Caltab, HDevWindowStack::GetActive());
+	}
+	if (HDevWindowStack::IsOpen())
+	{
+		SetColor(HDevWindowStack::GetActive(),"pink");
+	}
+	if (HDevWindowStack::IsOpen())
+	{
+		DispCaltab(HDevWindowStack::GetActive(), hv_CaltabName, hv_CamParam, hv_PoseForCalibrationPlate, 1);
 	}
 
-	//Write pose to file
+	// Cross
+	if (HDevWindowStack::IsOpen())
+	{
+		SetColor(HDevWindowStack::GetActive(),"red");
+		DispObj(ho_Cross, HDevWindowStack::GetActive());
+	}
+
+	// Write pose to file
 	HTuple hv_CamPoseFile = (char*)LPCTSTR(m_CamPoseFile);
 	WritePose(hv_PoseForCalibrationPlate, hv_CamPoseFile);
 
+
+
 	ClearCalibData(hv_CalibDataID);
+}
+
+
+
+
+void CCamCalibDlg::OnBnClickedCalAccuracyBtn()
+{
+	UpdateData(true);
+
+	// Local iconic variables
+	HObject  ho_Image, ho_Caltab;
+
+	HObject ho_Cross;
+
+	// Local control variables
+	HTuple  hv_ImgPath, hv_WindowHandle, hv_CamParam;
+	HTuple  hv_Exception, hv_CaltabName, hv_CalibDataID, hv_RCoord;
+	HTuple  hv_CCoord, hv_Index, hv_PoseForCalibrationPlate;
+	HTuple  hv_finalPose,  hv_Button;
+
+	HTuple  hv_X1, hv_Y1, hv_Distance;
+    HTuple  hv_MeanDistance, hv_DeviationDistance;
+
+
+	HTuple ho_PoseFilePath;
+
+	//Read Image
+	hv_ImgPath = (char*)LPCTSTR(m_AccuracyImage);
+	ReadImage(&ho_Image, hv_ImgPath);
+
+	if (HDevWindowStack::IsOpen())
+	{
+		HalconCpp::DispObj(ho_Image, HDevWindowStack::GetActive());
+	}
+
+	//Read Camera param
+	HTuple hv_CamParamFile;
+	hv_CamParamFile = (char*)LPCTSTR(m_CamParamFile);
+	try
+	{
+		ReadCamPar(hv_CamParamFile, &hv_CamParam);
+	}
+	catch (HalconCpp::HException &HDevExpDefaultException)
+	{
+		HDevExpDefaultException.ToHTuple(&hv_Exception);
+	}
+
+	//Read Camera Pose
+	HTuple hv_CamPose;
+	HTuple hv_CamPoseFile = (char*)LPCTSTR(m_CamPoseFile);
+	try
+	{
+		ReadPose(hv_CamPoseFile, &hv_CamPose);
+	}
+	// catch (Exception) 
+	catch (HalconCpp::HException &HDevExpDefaultException)
+	{
+		HDevExpDefaultException.ToHTuple(&hv_Exception);
+		//run 'camera_calibration_internal.hdev' first to generate camera
+		//parameter file 'camera_parameters.dat'
+		// stop(); only in hdevelop
+	}
+
+
+	//calibration plate is positioned directly on the measurement plane
+	hv_CaltabName = (char*)LPCTSTR(m_CalibModel);
+
+	CreateCalibData("calibration_object", 1, 1, &hv_CalibDataID);
+
+	SetCalibDataCamParam(hv_CalibDataID, 0, "area_scan_division", hv_CamParam);
+
+	SetCalibDataCalibObject(hv_CalibDataID, 0, hv_CaltabName);
+
+	FindCalibObject(ho_Image, hv_CalibDataID, 0, 0, 1, HTuple(), HTuple());
+
+	GetCalibDataObservContours(&ho_Caltab, hv_CalibDataID, "caltab", 0, 0, 1);
+
+	GetCalibDataObservPoints(hv_CalibDataID, 0, 0, 1, &hv_RCoord, &hv_CCoord, &hv_Index, &hv_PoseForCalibrationPlate);
+
+	GenCrossContourXld(&ho_Cross, hv_RCoord, hv_CCoord, 6, 0.785398);
+
+	// Cross
+	if (HDevWindowStack::IsOpen())
+	{
+		SetColor(HDevWindowStack::GetActive(),"red");
+		DispObj(ho_Cross, HDevWindowStack::GetActive());
+	}
+	
+	// Cal Accuracy
+	ImagePointsToWorldPlane(hv_CamParam, hv_PoseForCalibrationPlate, hv_RCoord, hv_CCoord, "mm", &hv_X1, &hv_Y1);
+
+	hv_Distance = HTuple();
+	for(int r = 0; r < m_ModelRow; r++)
+	{
+		HTuple distance;
+
+		int i = r * m_ModelColumn;
+
+		int j = i + m_ModelColumn - 2;
+
+		 DistancePp(hv_X1.TupleSelectRange( i, j), hv_Y1.TupleSelectRange(i, j), 
+			 hv_X1.TupleSelectRange(i + 1, j + 1), hv_Y1.TupleSelectRange(i + 1, j + 1), &distance);
+
+
+		 hv_Distance.Append(distance);
+	}
+   
+	TupleMean(hv_Distance, &hv_MeanDistance);   
+
+	TupleDeviation(hv_Distance, &hv_DeviationDistance);
+
+	CString msg;
+
+	msg.Format(_T("Mean distance: %.3f mm +/- %.3f mm"),  (float)hv_MeanDistance, (float)hv_DeviationDistance);
+
+	MessageBox(msg);
+
+	ClearCalibData(hv_CalibDataID);
+	
 }
