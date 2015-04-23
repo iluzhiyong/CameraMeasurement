@@ -203,6 +203,7 @@
     <None Include="res\CameraMeasurement.rc2" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AutoHListBox.h" />
     <ClInclude Include="CamCalibDlg.h" />
     <ClInclude Include="CameraMeasurement.h" />
     <ClInclude Include="CameraMeasurementDlg.h" />
@@ -214,6 +215,7 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="AutoHListBox.cpp" />
     <ClCompile Include="CamCalibDlg.cpp" />
     <ClCompile Include="CameraMeasurement.cpp" />
     <ClCompile Include="CameraMeasurementDlg.cpp" />

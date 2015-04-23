@@ -34,15 +34,15 @@
 ParGroup: Camera: Parameter;
 	"Internal camera parameters";
 
-Focus:foc:	0.0161703501831999;
+Focus:foc:	0.0371200228847625;
 	DOUBLE:0.0:;
 	"Focal length of the lens";
 
-Kappa:kappa:	-639.990421899165;
+Kappa:kappa:	291.213193948878;
 	DOUBLE::;
 	"Radial distortion coefficient";
 
-Sx:sx:	7.40108791846211e-006;
+Sx:sx:	7.14302882946262e-006;
 	DOUBLE:0.0:;
 	"Width of a cell on the sensor";
 
@@ -50,23 +50,23 @@ Sy:sy:	7.4e-006;
 	DOUBLE:0.0:;
 	"Height of a cell on the sensor";
 
-Cx:cx:	333.895895988014;
+Cx:cx:	95.7029364381557;
 	DOUBLE::;
 	"X-coordinate of the image center";
 
-Cy:cy:	244.935973113931;
+Cy:cy:	-692.822767608766;
 	DOUBLE::;
 	"Y-coordinate of the image center";
 
-ImageWidth:imgw:	652;
+ImageWidth:imgw:	1280;
 	INT:1:32768;
 	"Width of the images";
 
-ImageHeight:imgh:	494;
+ImageHeight:imgh:	1024;
 	INT:1:32768;
 	"Height of the images";
 
 
 #
-# HALCON Version 12.0 --  Sat Apr 11 19:52:08 2015
+# HALCON Version 12.0 --  Wed Apr 22 23:29:14 2015
 #

@@ -1,5 +1,6 @@
 #pragma once
-
+#include "afxwin.h"
+#include "AutoHListBox.h"
 
 // CCamCalibDlg dialog
 
@@ -44,4 +45,13 @@ public:
 	afx_msg void OnBnClickedCalAccuracyBtn();
 	int m_ModelRow;
 	int m_ModelColumn;
+	CAutoHListBox m_ImageList;
+	afx_msg void OnBnClickedSelectCalibImageBtn();
+	afx_msg void OnBnClickedSelectCalibModelBtn();
+	afx_msg void OnBnClickedSelectCamParamBtn();
+	afx_msg void OnBnClickedSelectCamPoseImageBtn();
+	afx_msg void OnBnClickedSelectCamPoseFileBtn();
+	afx_msg void OnBnClickedSelectCalAccuracyImageBtn();
+	CString m_InitCamParam;
+	afx_msg void OnBnClickedSelectInitCamParamBtn();
 };

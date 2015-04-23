@@ -242,7 +242,6 @@ void CCameraMeasurementDlg::OpenHalconWind()
 	HDevWindowStack::Push(hv_WindowID);
 }
 
-
 void CCameraMeasurementDlg::DisplayImage(HObject image, bool resize)
 {
 	if(resize && HDevWindowStack::IsOpen())

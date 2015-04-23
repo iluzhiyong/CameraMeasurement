@@ -51,6 +51,9 @@
     <ClInclude Include="ImageProcessDlg.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="AutoHListBox.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CameraMeasurement.cpp">
@@ -69,6 +72,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ImageProcessDlg.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="AutoHListBox.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

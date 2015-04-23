@@ -1,10 +1,10 @@
 ﻿1>------ Rebuild All started: Project: CameraMeasurement, Configuration: Debug x64 ------
-1>Build started 2015/4/9 22:10:38.
+1>Build started 2015/4/22 21:32:50.
 1>_PrepareForClean:
 1>  Deleting file "x64\Debug\CameraMeasurement.lastbuildstate".
 1>C:\Program Files (x86)\MSBuild\Microsoft.Cpp\v4.0\Microsoft.CppBuild.targets(299,5): warning MSB8004: Output Directory does not end with a trailing slash.  This build instance will add the slash as it is required to allow proper evaluation of the Output Directory.
 1>InitializeBuildStatus:
-1>  Touching "x64\Debug\CameraMeasurement.unsuccessfulbuild".
+1>  Creating "x64\Debug\CameraMeasurement.unsuccessfulbuild" because "AlwaysCreate" was specified.
 1>ClCompile:
 1>  stdafx.cpp
 1>  ImageWCSDlg.cpp
@@ -12,10 +12,19 @@
 1>  CameraMeasurementDlg.cpp
 1>  CameraMeasurement.cpp
 1>  CamCalibDlg.cpp
+1>  AutoHListBox.cpp
 1>  Generating Code...
-1>LINK : fatal error LNK1123: 转换到 COFF 期间失败: 文件无效或损坏
+1>Link:
+1>  CameraMeasurement.vcxproj -> E:\Work\CamMeasure\bin\CameraMeasurement.exe
+1>Manifest:
+1>  Deleting file "x64\Debug\CameraMeasurement.exe.embed.manifest".
+1>LinkEmbedManifest:
+1>  CameraMeasurement.vcxproj -> E:\Work\CamMeasure\bin\CameraMeasurement.exe
+1>FinalizeBuildStatus:
+1>  Deleting file "x64\Debug\CameraMeasurement.unsuccessfulbuild".
+1>  Touching "x64\Debug\CameraMeasurement.lastbuildstate".
 1>
-1>Build FAILED.
+1>Build succeeded.
 1>
-1>Time Elapsed 00:00:08.74
-========== Rebuild All: 0 succeeded, 1 failed, 0 skipped ==========
+1>Time Elapsed 00:00:09.80
+========== Rebuild All: 1 succeeded, 0 failed, 0 skipped ==========

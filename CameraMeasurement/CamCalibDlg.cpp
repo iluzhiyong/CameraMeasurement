@@ -3,6 +3,7 @@
 
 #include "stdafx.h"
 #include "CameraMeasurement.h"
+#include "AutoHListBox.h"
 #include "CamCalibDlg.h"
 #include "afxdialogex.h"
 #include "HalconHeader.h"
@@ -26,6 +27,7 @@ IMPLEMENT_DYNAMIC(CCamCalibDlg, CDialog)
 	, m_AccuracyImage(_T(""))
 	, m_ModelRow(7)
 	, m_ModelColumn(7)
+	, m_InitCamParam(_T(""))
 {
 	m_CalcParam = false;
 	InitSet();
@@ -43,6 +45,8 @@ void CCamCalibDlg::InitSet()
 	m_CamPoseFile = exePath + _T("Files\\camera_pose.dat");
 	m_CamPoseImage = exePath + _T("Images\\CamPoseImges\\calib_11");
 	m_AccuracyImage = exePath + _T("Images\\AccuracyImges\\calib_12");
+	m_InitCamParam = exePath + _T("Files\\InitCameraParamFile\\camera_parameters.dat");
+	
 
 }
 
@@ -65,9 +69,6 @@ void CCamCalibDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialog::DoDataExchange(pDX);
 	DDX_Text(pDX, IDC_CALIB_MODEL_EDIT, m_CalibModel);
-	DDX_Text(pDX, IDC_IMG_DIR_EDIT, m_ImageDir);
-	DDX_Text(pDX, IDC_IMG_NAME_EDIT, m_ImageName);
-	DDX_Text(pDX, IDC_IMG_NUM_EDIT, m_ImageNums);
 	DDX_Text(pDX, IDC_CAM_PARAM_FILE_EDIT, m_CamParamFile);
 	DDX_Text(pDX, IDC_CAM_POSE_FILE_EDIT, m_CamPoseFile);
 	DDX_Text(pDX, IDC_CAM_POSE_IMAG_EDIT, m_CamPoseImage);
@@ -75,6 +76,8 @@ void CCamCalibDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Text(pDX, IDC_CAM_ACCURACY_IMAG_EDIT, m_AccuracyImage);
 	DDX_Text(pDX, IDC_CALIB_MODEL_ROW_EDIT, m_ModelRow);
 	DDX_Text(pDX, IDC_CALIB_MODEL_COLUMN_EDIT, m_ModelColumn);
+	DDX_Control(pDX, IDC_LIST1, m_ImageList);
+	DDX_Text(pDX, IDC_INIT_CAM_PARAM_FILE_EDIT, m_InitCamParam);
 }
 
 
@@ -83,6 +86,13 @@ BEGIN_MESSAGE_MAP(CCamCalibDlg, CDialog)
 	ON_BN_CLICKED(IDC_CALC_CAM_PARAM_BTN, &CCamCalibDlg::OnBnClickedCalcCamParamBtn)
 	ON_BN_CLICKED(IDC_CAL_CAM_POSE_BTN, &CCamCalibDlg::OnBnClickedCalCamPoseBtn)
 	ON_BN_CLICKED(IDC_CAL_ACCURACY_BTN, &CCamCalibDlg::OnBnClickedCalAccuracyBtn)
+	ON_BN_CLICKED(IDC_SELECT_CALIB_IMAGE_BTN, &CCamCalibDlg::OnBnClickedSelectCalibImageBtn)
+	ON_BN_CLICKED(IDC_SELECT_CALIB_MODEL_BTN, &CCamCalibDlg::OnBnClickedSelectCalibModelBtn)
+	ON_BN_CLICKED(IDC_SELECT_CAM_PARAM_BTN, &CCamCalibDlg::OnBnClickedSelectCamParamBtn)
+	ON_BN_CLICKED(IDC_SELECT_CAM_POSE_IMAGE_BTN, &CCamCalibDlg::OnBnClickedSelectCamPoseImageBtn)
+	ON_BN_CLICKED(IDC_SELECT_CAM_POSE_FILE_BTN, &CCamCalibDlg::OnBnClickedSelectCamPoseFileBtn)
+	ON_BN_CLICKED(IDC_SELECT_CAL_ACCURACY_IMAGE_BTN, &CCamCalibDlg::OnBnClickedSelectCalAccuracyImageBtn)
+	ON_BN_CLICKED(IDC_SELECT_INIT_CAM_PARAM_BTN, &CCamCalibDlg::OnBnClickedSelectInitCamParamBtn)
 END_MESSAGE_MAP()
 
 
@@ -114,31 +124,52 @@ void CCamCalibDlg::CalcCamParam()
 	HObject  ho_Image, ho_Caltab;
 	// Local control variables
 	HTuple  hv_ImgPath;
-	HTuple  hv_StartCamPar, hv_CalibDataID, hv_NumImages, hv_I;
+	HTuple  hv_StartCamPar, hv_CalibDataID, hv_NumImages;
 	HTuple  hv_Error, hv_CamParam, hv_Message;
 	HTuple  hv_CalibModel;
 	HTuple  hv_CamParamFile;
 	HTuple  hv_ImageName;
 
+	CString msg;
+
 	hv_ImgPath = (char*)LPCTSTR(m_ImageDir);
 	hv_ImageName = (char*)LPCTSTR(m_ImageName);
 	hv_CalibModel = (char*)LPCTSTR(m_CalibModel);
 
-	//Calibrate the camera.
-	hv_StartCamPar.Clear();
-	hv_StartCamPar[0] = 0.016;
-	hv_StartCamPar[1] = 0;
-	hv_StartCamPar[2] = 0.0000074;
-	hv_StartCamPar[3] = 0.0000074;
-	hv_StartCamPar[4] = 326;
-	hv_StartCamPar[5] = 247;
-	hv_StartCamPar[6] = 652;
-	hv_StartCamPar[7] = 494;
+	//Read Camera param
+	hv_CamParamFile = (char*)LPCTSTR(m_InitCamParam);
+	try
+	{
+		ReadCamPar(hv_CamParamFile, &hv_StartCamPar);
+	}
+	catch (...)
+	{
+		AfxMessageBox("Failed to read init camera parameter file ");
+		return;
+	}
 
+	if(m_ImageList.GetCount() <= 0)
+	{
+		AfxMessageBox("No images. Please select calibration image first.");
+		return;
+	}
+
+	CString imageFile;
+	m_ImageList.GetText(0, imageFile);
 
 	if (HDevWindowStack::IsOpen())
 	{
-		ReadImage(&ho_Image, (hv_ImgPath + hv_ImageName)+("01"));
+		try
+		{
+			ReadImage(&ho_Image, (char*)LPCTSTR(imageFile));
+		}
+		catch(...)
+		{
+			msg.Format(_T("Failed to load image ""%s"""), imageFile); 
+			AfxMessageBox(msg);
+			return;
+		}
+
 		HTuple hv_width, hv_height;
 		HalconCpp::GetImageSize(ho_Image, &hv_width, &hv_height);
 		HalconCpp::SetPart(HDevWindowStack::GetActive(), 0, 0, hv_height -1,  hv_width - 1);
@@ -151,41 +182,64 @@ void CCamCalibDlg::CalcCamParam()
 
 	SetCalibDataCalibObject(hv_CalibDataID, 0, hv_CalibModel);
 
-	hv_NumImages = m_ImageNums;
-	//Note, we do not use the image from which the pose of the measurement plane can be derived
+	int imageCount = m_ImageList.GetCount();
 	{
-		HTuple end_val17 = hv_NumImages;
-		HTuple step_val17 = 1;
-		for (hv_I=1; hv_I.Continue(end_val17, step_val17); hv_I += step_val17)
+		for (int i = 1; i < imageCount; i++)
 		{
-			ReadImage(&ho_Image, (hv_ImgPath + hv_ImageName)+(hv_I.TupleString("02d")));
+			m_ImageList.GetText(i, imageFile);
+			try
+			{
+				ReadImage(&ho_Image, (char*)LPCTSTR(imageFile));
+			}
+			catch(...)
+			{
+				msg.Format(_T("Failed to load image ""%s"""), imageFile); 
+				AfxMessageBox(msg);
+				continue;
+			}
+
 			if (HDevWindowStack::IsOpen())
 			{
 				HalconCpp::DispObj(ho_Image, HDevWindowStack::GetActive());
 			}
-			FindCalibObject(ho_Image, hv_CalibDataID, 0, 0, hv_I, HTuple(), HTuple());
-			GetCalibDataObservContours(&ho_Caltab, hv_CalibDataID, "caltab", 0, 0, hv_I);
+
+			try
+			{
+				FindCalibObject(ho_Image, hv_CalibDataID, 0, 0, i, HTuple(), HTuple());
+			}
+			catch(...)
+			{
+				msg.Format(_T("Can not find calibraion object in image ""%s"""), imageFile); 
+				AfxMessageBox(msg);
+				continue;
+			}
+
+			GetCalibDataObservContours(&ho_Caltab, hv_CalibDataID, "caltab", 0, 0, i);
+
 			if (HDevWindowStack::IsOpen())
 			{
 				HalconCpp::SetColor(HDevWindowStack::GetActive(),"green");
-			}
-			if (HDevWindowStack::IsOpen())
-			{
 				HalconCpp::DispObj(ho_Caltab, HDevWindowStack::GetActive());
 			}
 		}
 	}
-	CalibrateCameras(hv_CalibDataID, &hv_Error);
 
-	GetCalibData(hv_CalibDataID, "camera", 0, "params", &hv_CamParam);
+	try
+	{
+		CalibrateCameras(hv_CalibDataID, &hv_Error);
+		GetCalibData(hv_CalibDataID, "camera", 0, "params", &hv_CamParam);
+	}
+	catch(...)
+	{
 
-	//Write the internal camera parameters to a file
+		return ;
+	}
+
 	hv_CamParamFile = (char*)LPCTSTR(m_CamParamFile);
 	WriteCamPar(hv_CamParam, hv_CamParamFile);
 
 	ClearCalibData(hv_CalibDataID);
 }
-
 
 void CCamCalibDlg::OnBnClickedCalCamPoseBtn()
 {
@@ -238,6 +292,7 @@ void CCamCalibDlg::CalCamPose()
 
 	//Read Camera param
 	HTuple hv_CamParamFile;
+
 	hv_CamParamFile = (char*)LPCTSTR(m_CamParamFile);
 	try
 	{
@@ -297,9 +352,6 @@ void CCamCalibDlg::CalCamPose()
 
 	ClearCalibData(hv_CalibDataID);
 }
-
-
-
 
 void CCamCalibDlg::OnBnClickedCalAccuracyBtn()
 {
@@ -415,4 +467,94 @@ void CCamCalibDlg::OnBnClickedCalAccuracyBtn()
 
 	ClearCalibData(hv_CalibDataID);
 	
+}
+
+void CCamCalibDlg::OnBnClickedSelectCalibImageBtn()
+{
+	CFileDialog openDlg(true, NULL, NULL, OFN_ALLOWMULTISELECT);
+	const int nMaxFiles = 50;
+	const int nMaxPathBuffer = (nMaxFiles * (MAX_PATH + 1)) + 1;  
+	LPSTR pc = (LPSTR)malloc(nMaxPathBuffer * sizeof(char));
+	if(pc) 
+	{
+		openDlg.GetOFN().lpstrFile = pc; 
+		openDlg.GetOFN().lpstrFile[0] = NULL; 
+		openDlg.GetOFN().nMaxFile = nMaxPathBuffer; 
+		if( openDlg.DoModal() == IDOK )  
+		{  
+			m_ImageList.ResetContent();
+			/*while(m_ImageList.GetCount() > 0)
+			{
+				m_ImageList.DeleteString( 0 ); 
+			}*/
+			POSITION posStart = openDlg.GetStartPosition();  
+			while( posStart )  
+			{  
+				CString fileName = openDlg.GetNextPathName(posStart);  
+				m_ImageList.AddString(fileName);
+			}
+		} 
+		free(pc); 
+	}
+}
+
+
+void CCamCalibDlg::OnBnClickedSelectCalibModelBtn()
+{
+	CFileDialog openDlg(true, NULL, NULL);
+	if(openDlg.DoModal() == IDOK)
+	{
+		m_CalibModel = openDlg.GetPathName();
+		UpdateData(false);
+	}
+}
+
+
+void CCamCalibDlg::OnBnClickedSelectCamParamBtn()
+{
+	CFileDialog openDlg(true, NULL, NULL);
+	if(openDlg.DoModal() == IDOK)
+	{
+		m_CamParamFile = openDlg.GetPathName();
+		UpdateData(false);
+	}
+}
+
+
+void CCamCalibDlg::OnBnClickedSelectCamPoseImageBtn()
+{
+	CFileDialog openDlg(true, NULL, NULL);
+	if(openDlg.DoModal() == IDOK)
+	{
+		m_CamPoseImage = openDlg.GetPathName();
+		UpdateData(false);
+	}
+}
+
+
+void CCamCalibDlg::OnBnClickedSelectCamPoseFileBtn()
+{
+	CFileDialog openDlg(true, NULL, NULL);
+	if(openDlg.DoModal() == IDOK)
+	{
+		m_CamPoseFile = openDlg.GetPathName();
+		UpdateData(false);		
+	}
+}
+
+
+void CCamCalibDlg::OnBnClickedSelectCalAccuracyImageBtn()
+{
+		CFileDialog openDlg(true, NULL, NULL);
+	if(openDlg.DoModal() == IDOK)
+	{
+		m_AccuracyImage = openDlg.GetPathName();
+		UpdateData(false);
+	}
+}
+
+
+void CCamCalibDlg::OnBnClickedSelectInitCamParamBtn()
+{
+	// TODO: Add your control notification handler code here
 }
